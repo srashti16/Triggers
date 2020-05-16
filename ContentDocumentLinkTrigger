@@ -1,0 +1,5 @@
+trigger ContentDocumentLinkTrigger on ContentDocumentLink (after insert) {
+    If(trigger.isInsert && trigger.isAfter){
+        ContentDocumentLinkTriggerHandler.attachFiles(trigger.new);
+    }
+}
