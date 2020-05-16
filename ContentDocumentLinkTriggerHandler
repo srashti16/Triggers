@@ -1,0 +1,32 @@
+public class ContentDocumentLinkTriggerHandler {
+    public static void attachFiles(List<ContentDocumentLink> contentDocList){
+        List<ContentDocumentLink> cdlList = new List<ContentDocumentLink>(); //list of contentDocumentLink
+        Map<Id,Id> oppVSCDmap = new Map<Id,Id>(); //map for storing record's id and document id
+        
+        //storing the entityId and documentId
+        for(ContentDocumentLink cdl : contentDocList){
+            if(cdl.LinkedEntityId.getSObjectType().getDescribe().getName() == 'Opportunity'){ 
+                if(!oppVSCDmap.containsKey(cdl.LinkedEntityId)){
+                    oppVSCDmap.put(cdl.LinkedEntityId, cdl.ContentDocumentId);
+                }      
+            }
+        }
+        
+        System.debug('oppVSCDmap >>> ' + oppVSCDmap);
+        
+       //query for fetching the records which are associated to the opportuity's quote 
+        List<Quote_File__c> oliList = new List<Quote_File__c>([SELECT Id, Quote__r.OpportunityId FROM Quote_File__c 
+                                                    WHERE Quote__r.OpportunityId IN: oppVSCDmap.keySet()]);
+        System.debug('oliList >>> ' + oliList);
+        //creting a file to the object records
+        for(Quote_File__c qfVar : oliList){
+            ContentDocumentLink cdl = new ContentDocumentLink();
+            System.debug('qfVar.Quote_r.OpportunityId >>> ' + qfVar.Quote__r.OpportunityId);
+            cdl.ContentDocumentId = oppVSCDmap.get(qfVar.Quote__r.OpportunityId);
+            cdl.LinkedEntityId = qfVar.Id;     
+            cdl.ShareType = 'I';
+            cdlList.add(cdl);
+        }
+        upsert cdlList;
+    }
+}
